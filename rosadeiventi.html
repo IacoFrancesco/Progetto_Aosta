@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #e0e0e0; }
+        svg { width: 600px; height: 600px; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.2)); }
+        
+        .punta-r { fill: #ffffff; stroke: #333; stroke-width: 0.5; cursor: pointer; transition: 0.3s; }
+        .punta-l { fill: #cccccc; stroke: #333; stroke-width: 0.5; cursor: pointer; transition: 0.3s; }
+        
+        .selected .punta-r, .selected .punta-l { fill: #222 !important; }
+        
+        text { font-family: 'Georgia', serif; font-weight: bold; pointer-events: none; user-select: none; }
+        .cardinal { font-size: 16px; fill: #b22222; }
+        .intercardinal { font-size: 10px; fill: #444; }
+    </style>
+</head>
+<body>
+
+<svg viewBox="-20 -20 240 240">
+    <!-- NORD -->
+    <g class="punta-group" onclick="this.classList.toggle('selected')">
+        <path class="punta-l" d="M 100,100 L 100,20 L 90,80 Z"></path>
+        <path class="punta-r" d="M 100,100 L 100,20 L 110,80 Z"></path>
+    </g>
+    <!-- NORD-EST -->
+    <g class="punta-group" onclick="this.classList.toggle('selected')">
+        <path class="punta-l" d="M 100,100 L 155,45 L 110,80 Z"></path>
+        <path class="punta-r" d="M 100,100 L 155,45 L 120,90 Z"></path>
+    </g>
+    <!-- EST -->
+    <g class="punta-group" onclick="this.classList.toggle('selected')">
+        <path class="punta-l" d="M 100,100 L 180,100 L 120,90 Z"></path>
+        <path class="punta-r" d="M 100,100 L 180,100 L 120,110 Z"></path>
+    </g>
+    <!-- SUD-EST -->
+    <g class="punta-group" onclick="this.classList.toggle('selected')">
+        <path class="punta-l" d="M 100,100 L 155,155 L 120,110 Z"></path>
+        <path class="punta-r" d="M 100,100 L 155,155 L 110,120 Z"></path>
+    </g>
+    <!-- SUD -->
+    <g class="punta-group" onclick="this.classList.toggle('selected')">
+        <path class="punta-l" d="M 100,100 L 100,180 L 110,120 Z"></path>
+        <path class="punta-r" d="M 100,100 L 100,180 L 90,120 Z"></path>
+    </g>
+    <!-- SUD-OVEST -->
+    <g class="punta-group" onclick="this.classList.toggle('selected')">
+        <path class="punta-l" d="M 100,100 L 45,155 L 90,120 Z"></path>
+        <path class="punta-r" d="M 100,100 L 45,155 L 80,110 Z"></path>
+    </g>
+    <!-- OVEST -->
+    <g class="punta-group" onclick="this.classList.toggle('selected')">
+        <path class="punta-l" d="M 100,100 L 20,100 L 80,110 Z"></path>
+        <path class="punta-r" d="M 100,100 L 20,100 L 80,90 Z"></path>
+    </g>
+    <!-- NORD-OVEST -->
+    <g class="punta-group" onclick="this.classList.toggle('selected')">
+        <path class="punta-l" d="M 100,100 L 45,45 L 80,90 Z"></path>
+        <path class="punta-r" d="M 100,100 L 45,45 L 90,80 Z"></path>
+    </g>
+
+    <!-- Etichette Cardinali -->
+    <text x="100" y="10" text-anchor="middle" class="cardinal">N</text>
+    <text x="195" y="105" text-anchor="start" class="cardinal">E</text>
+    <text x="100" y="198" text-anchor="middle" class="cardinal">S</text>
+    <text x="5" y="105" text-anchor="end" class="cardinal">O</text>
+
+    <!-- Etichette Intercardinali -->
+    <text x="160" y="40" text-anchor="start" class="intercardinal">NE</text>
+    <text x="160" y="165" text-anchor="start" class="intercardinal">SE</text>
+    <text x="40" y="165" text-anchor="end" class="intercardinal">SO</text>
+    <text x="40" y="40" text-anchor="end" class="intercardinal">NO</text>
+</svg>
+
+</body>
+</html>

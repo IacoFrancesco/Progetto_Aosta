@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meteomont Civile - Valle d'Aosta (Pro)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Stili Mappa Principale */
+        .zone-path { transition: all 0.3s; cursor: pointer; stroke: #fff; stroke-width: 1; }
+        .zone-path:hover { opacity: 0.8; stroke-width: 3; }
+        .danger-1 { fill: #22c55e; }
+        .danger-2 { fill: #eab308; }
+        .danger-3 { fill: #f97316; }
+        .danger-4 { fill: #ef4444; }
+        .danger-5 { fill: #7f1d1d; }
+        .selected { stroke: #3b82f6; stroke-width: 4; }
+
+        /* Stili Montagna Interattiva (zona1.0) */
+        .mountain-svg { width: 100%; max-width: 250px; margin: auto; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.1)); }
+        .section-path { stroke: #333; stroke-width: 2; transition: all 0.3s; fill: white; }
+        .death-fill { fill: url(#deathGradient) !important; stroke: #ff0000; stroke-width: 3px; }
+        .btn-death { background: #600000 !important; color: #ff0000 !important; border: 2px solid #ff0000 !important; box-shadow: 0 0 5px red; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+
+    <header class="p-6 border-b border-slate-800 bg-slate-900 shadow-xl">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-black tracking-tighter text-white">METEOMONT <span class="text-blue-500">AOSTA</span></h1>
+                <p class="text-sm text-slate-400 italic">Bollettino Integrato: Mappa Geografica + Fasce di Quota</p>
+            </div>
+            <div class="px-4 py-1 rounded-full bg-green-500/20 text-green-400 text-xs font-bold border border-green-500/50">MODALITÀ EMETTITORE</div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-4 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <div class="lg:col-span-6 bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-2xl">
+            <h2 class="text-xl font-bold mb-6 flex items-center tracking-tight">🗺️ Zone Valle d'Aosta</h2>
+            <div id="map-container" class="grid grid-cols-3 md:grid-cols-6 gap-3"></div>
+        </div>
+
+        <div class="lg:col-span-6">
+            <div id="editor-panel" class="bg-white text-slate-900 p-6 rounded-3xl shadow-2xl hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 id="zone-title" class="text-2xl font-black uppercase italic text-slate-800 italic">Settore</h2>
+                    <span id="danger-badge" class="px-3 py-1 rounded text-white font-bold text-sm"></span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-slate-50 p-4 rounded-2xl border flex flex-col items-center">
+                        <svg viewBox="0 0 200 200" class="mountain-svg">
+                            <defs>
+                                <linearGradient id="deathGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#000000; stop-opacity:1">
+                                        <animate attributeName="stop-color" values="#000000;#8b0000;#000000" dur="1s" repeatCount="indefinite" />
+                                    </stop>
+                                    <stop offset="100%" style="stop-color:#ff0000; stop-opacity:1">
+                                        <animate attributeName="stop-color" values="#ff0000;#000000;#ff0000" dur="1s" repeatCount="indefinite" />
+                                    </stop>
+                                </linearGradient>
+                            </defs>
+                            <path id="sec1" class="section-path" d="M100 20 L130 70 L70 70 Z" />
+                            <path id="sec2" class="section-path" d="M70 70 L130 70 L150 110 L50 110 Z" />
+                            <path id="sec3" class="section-path" d="M50 110 L150 110 L175 150 L25 150 Z" />
+                            <path id="sec4" class="section-path" d="M25 150 L175 150 L190 190 L10 190 Z" />
+                        </svg>
+                        <p class="text-[10px] text-slate-400 mt-2">Visualizzazione Fasce di Pericolo</p>
+                    </div>
+
+                    <div id="mountain-controls" class="space-y-2 overflow-y-auto max-h-[300px] pr-2">
+                        </div>
+                </div>
+
+                <hr class="my-6">
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Nota Generale Settore</label>
+                        <textarea id="input-desc" class="w-full p-3 bg-slate-100 border rounded-xl h-20 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Inserisci note aggiuntive..."></textarea>
+                    </div>
+                    <button onclick="saveData()" class="w-full py-4 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 shadow-lg transition-all active:scale-95">
+                        SALVA E PUBBLICA BOLLETTINO
+                    </button>
+                </div>
+            </div>
+
+            <div id="placeholder-msg" class="bg-slate-900 border border-dashed border-slate-700 p-20 rounded-3xl text-center text-slate-500">
+                <p class="text-5xl mb-4">⛰️</p>
+                <p>Seleziona una zona sulla mappa per configurare le fasce di altitudine.</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const sezioniMontagna = ["Cima", "Fascia Alta", "Fascia Media", "Base"];
+        const coloriFasce = [
+            {n: 'B', c: '#ffffff'}, {n: 'V', c: '#4CAF50'}, 
+            {n: 'G', c: '#FFEB3B'}, {n: 'A', c: '#FF9800'}, 
+            {n: 'R', c: '#f44336'},
+            {n: 'M', c: 'DEATH', isDeath: true} 
+        ];
+
+        let zonesData = Array.from({ length: 18 }, (_, i) => ({
+            id: i + 1,
+            name: `Settore ${i + 1}`,
+            danger: 1,
+            desc: "",
+            fasce: ['#ffffff', '#ffffff', '#ffffff', '#ffffff'] // Colori iniziali per le 4 sezioni
+        }));
+
+        let currentZoneId = null;
+
+        function renderMap() {
+            const container = document.getElementById('map-container');
+            container.innerHTML = '';
+            zonesData.forEach(zone => {
+                const btn = document.createElement('div');
+                btn.className = `zone-path h-20 flex flex-col items-center justify-center rounded-xl font-black text-lg danger-${zone.danger} ${currentZoneId === zone.id ? 'selected' : ''}`;
+                btn.innerHTML = `<span>${zone.id}</span><span class="text-[10px] opacity-70 italic">VdA</span>`;
+                btn.onclick = () => selectZone(zone.id);
+                container.appendChild(btn);
+            });
+        }
+
+        function selectZone(id) {
+            currentZoneId = id;
+            const zone = zonesData.find(z => z.id === id);
+            
+            document.getElementById('placeholder-msg').classList.add('hidden');
+            document.getElementById('editor-panel').classList.remove('hidden');
+            document.getElementById('zone-title').innerText = zone.name;
+            document.getElementById('input-desc').value = zone.desc;
+
+            // Update Badge Pericolo
+            const badge = document.getElementById('danger-badge');
+            badge.innerText = `GRADO ${zone.danger}`;
+            badge.className = `px-3 py-1 rounded text-white font-bold text-sm danger-${zone.danger}`;
+
+            renderMountainControls(zone);
+            updateMountainColors(zone);
+            renderMap();
+        }
+
+        function renderMountainControls(zone) {
+            const ctrlDiv = document.getElementById('mountain-controls');
+            ctrlDiv.innerHTML = '';
+            
+            sezioniMontagna.forEach((nome, i) => {
+                let html = `<div class="p-2 border-b"><div class="text-[10px] font-bold uppercase text-slate-400 mb-1">${nome}</div><div class="flex flex-wrap gap-1">`;
+                coloriFasce.forEach(col => {
+                    const isDeath = col.isDeath || false;
+                    const activeClass = (zone.fasce[i] === col.c || (isDeath && zone.fasce[i] === 'DEATH')) ? 'ring-2 ring-black border-white' : 'border-transparent';
+                    const btnClass = isDeath ? 'btn-death text-[8px]' : '';
+                    const btnStyle = isDeath ? '' : `background:${col.c}`;
+                    
+                    html += `<button class="w-6 h-6 rounded border ${btnClass} ${activeClass}" style="${btnStyle}" 
+                                onclick="setFasciaColor(${i}, '${col.c}', ${isDeath})">
+                                ${isDeath ? '💀' : ''}
+                             </button>`;
+                });
+                html += `</div></div>`;
+                ctrlDiv.innerHTML += html;
+            });
+        }
+
+        function setFasciaColor(index, color, isDeath) {
+            const zone = zonesData.find(z => z.id === currentZoneId);
+            zone.fasce[index] = isDeath ? 'DEATH' : color;
+            
+            // Logica automatica: il pericolo massimo delle fasce determina il pericolo generale del settore
+            updateGeneralDanger(zone);
+            
+            updateMountainColors(zone);
+            renderMountainControls(zone);
+            renderMap();
+        }
+
+        function updateMountainColors(zone) {
+            zone.fasce.forEach((color, i) => {
+                const el = document.getElementById('sec' + (i + 1));
+                if (color === 'DEATH') {
+                    el.classList.add('death-fill');
+                } else {
+                    el.classList.remove('death-fill');
+                    el.style.fill = color;
+                }
+            });
+        }
+
+        function updateGeneralDanger(zone) {
+            // Se c'è almeno una fascia DEATH o Rossa -> Pericolo 4/5
+            // Se c'è Arancione -> Pericolo 3... (Logica semplificata)
+            if(zone.fasce.includes('DEATH')) zone.danger = 5;
+            else if(zone.fasce.includes('#f44336')) zone.danger = 4;
+            else if(zone.fasce.includes('#FF9800')) zone.danger = 3;
+            else if(zone.fasce.includes('#FFEB3B')) zone.danger = 2;
+            else zone.danger = 1;
+
+            const badge = document.getElementById('danger-badge');
+            badge.innerText = `GRADO ${zone.danger}`;
+            badge.className = `px-3 py-1 rounded text-white font-bold text-sm danger-${zone.danger}`;
+        }
+
+        function saveData() {
+            const zone = zonesData.find(z => z.id === currentZoneId);
+            zone.desc = document.getElementById('input-desc').value;
+            alert(`✅ Bollettino per ${zone.name} aggiornato!\nGrado di pericolo calcolato: ${zone.danger}`);
+        }
+
+        renderMap();
+    </script>
+</body>
+</html>
